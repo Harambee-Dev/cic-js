@@ -49,7 +49,7 @@ class TransactionHelper {
 			}
 		}
 		if (convert_log !== undefined) {
-			Conversion.processLog(convert_log);
+			Conversion.processLog(r.success, convert_log);
 		} else {
 			token_txs.forEach(function(a) {
 				Transfer.processLog(this.w3, a[0], a[1], a[2]);

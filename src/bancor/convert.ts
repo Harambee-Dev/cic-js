@@ -17,22 +17,24 @@ class Conversion {
 		this.tx = tx;
 	}
 
-	static async public processLog(log:Object): Conversion {
+	public static async processLog(w3:any, success: boolean, log:Object): Promise<Conversion> {
+		let conversion:Conversion = undefined;
 		if (log.topics[0] == topics.erc20['convert']) {
-			const block = await this.w3.eth.getBlock(log.blockNumber);
-			const sourceToken_address = this.w3.utils.toChecksumAddress('0x' + log.topics[1].substring(26, 66));
+			const block = await w3.eth.getBlock(log.blockNumber);
+			const sourceToken_address = w3.utils.toChecksumAddress('0x' + log.topics[1].substring(26, 66));
 			const sourceToken = this.registry.tokens_r[sourceToken_address];
-			const destinationToken_address = this.w3.utils.toChecksumAddress('0x' + log.topics[2].substring(26, 66));
+			const destinationToken_address = w3.utils.toChecksumAddress('0x' + log.topics[2].substring(26, 66));
 			const destinationToken = this.registry.tokens_r[destinationToken_address];
-			//const fromValue = this.w3.utils.hexToNumber(log.data.substring(0, 66));
+			//const fromValue = w3.utils.hexToNumber(log.data.substring(0, 66));
 			const fromValue = BigInt(log.data.substring(0, 66));
-			//const toValue = this.w3.utils.hexToNumber('0x' + log.data.substring(66, 130));
+			//const toValue = w3.utils.hexToNumber('0x' + log.data.substring(66, 130));
 			const toValue = BigInt(log.data.substring(0, 66));
-			const trader = this.w3.utils.toChecksumAddress('0x' + log.data.substring(154));
+			const trader = w3.utils.toChecksumAddress('0x' + log.data.substring(154));
 			const tx = new Tx(log.blockNumber, log.transactionIndex, log.transactionHash, block.timestamp, success);
-			const cv = new Conversion(tx, sourceToken, destinationToken, trader, fromValue, toValue);
-			this.onconversion(cv);
+			conversion = new Conversion(tx, sourceToken, destinationToken, trader, fromValue, toValue);
+			this.onconversion(conversion);
 		}
+		return conversion;
 	}
 }
 
