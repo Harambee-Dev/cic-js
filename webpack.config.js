@@ -11,9 +11,16 @@ module.exports = {
     library: 'cic',
     libraryTarget: 'window'
   },
-  mode: 'production',
+  mode: 'development',
   performance: {
     hints: false
   },
   stats: 'errors-only',
+  resolve: {
+	  fallback: {
+		  "path": false,
+		  "fs": false,
+	  },
+	  extensions: [".js", ".json"],
+  },
 };

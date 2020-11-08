@@ -1,0 +1,4 @@
+* 0.0.2
+	- Correct entry point
+* 0.0.1
+	- Add Registry, TransactionHelper, Conversion, Tx, Transfer, Convert

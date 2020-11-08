@@ -1,15 +1,15 @@
 {
-  "name": "cic-js",
-  "version": "0.0.1",
+  "name": "cic-client",
+  "version": "0.0.2",
   "description": "Typescript libraries for building CIC client applications",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
     "test": "mocha -r ts-node/register tests/*.ts",
     "build": "tsc -d --outDir dist",
-    "pack": "tsc -d --outDir dist && webpack"
+    "pack": "webpack"
   },
   "repository": {
     "type": "git",
