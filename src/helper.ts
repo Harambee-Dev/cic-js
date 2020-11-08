@@ -49,10 +49,12 @@ class TransactionHelper {
 			}
 		}
 		if (convert_log !== undefined) {
-			Conversion.processLog(r.success, convert_log);
+			const conversion = Conversion.processLog(this.w3, this.registry, r.status, convert_log);
+			this.onconversion(conversion);
 		} else {
 			token_txs.forEach(function(a) {
-				Transfer.processLog(this.w3, a[0], a[1], a[2]);
+				const transfer = Transfer.processLog(this.w3, a[0], a[1], a[2]);
+				this.ontransfer(transfer);
 			});
 		}
 	}
