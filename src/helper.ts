@@ -1,15 +1,23 @@
+import { Registry } from './registry';
 import { Transfer } from './common/erc20';
-import { Convert } from './bancor/convert';
+import { Conversion } from './bancor/convert';
+
+// TODO: Is there a way of importing the web3 type instead?
+class Receipt {
+	logs:	Array<any>
+	status:	boolean
+
+}
 
 class TransactionHelper {
 
+	w3:		any
 	registry:	Registry
-	w3:		Web3
 	ontransfer:	(Transfer) => void
 	onconversion:	(Convert) => void
 
-	constructor(w3, registry) {
-		this.w3 = w3;
+	constructor(registry) {
+		this.w3 = registry.w3;
 		this.registry = registry;
 
 		this.ontransfer = (t) => {
@@ -20,7 +28,7 @@ class TransactionHelper {
 		}
 	}
 
-	public async processReceipt(r:Object) {
+	public async processReceipt(r:Receipt) {
 		const logs = r.logs;
 		// TODO: Improve (vastly) by inspecting bloom filter instead
 		// TODO: Double check that convert was called on bancornetwork if found
@@ -41,11 +49,15 @@ class TransactionHelper {
 			}
 		}
 		if (convert_log !== undefined) {
-			this.processConvertTransactionLog(r.status, convert_log);
+			Conversion.processLog(convert_log);
 		} else {
 			token_txs.forEach(function(a) {
-				this.processTokenTransactionLog(a[0], a[1], a[2]);
+				Transfer.processLog(this.w3, a[0], a[1], a[2]);
 			});
 		}
 	}
+}
+
+export {
+	TransactionHelper,
 }

@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha -r ts-node/register tests/*.ts"
+    "test": "mocha -r ts-node/register tests/3*.ts"
   },
   "repository": {
     "type": "git",

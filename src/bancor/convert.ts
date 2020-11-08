@@ -35,3 +35,7 @@ class Conversion {
 		}
 	}
 }
+
+export {
+	Conversion,
+}

@@ -14,3 +14,16 @@ class Tx {
 		this.success = success;
 	}
 }
+
+class Log {
+	topics:			Array<any>
+	data:			string
+	blockNumber:		number
+	transactionIndex:	number
+	transactionHash:	string
+}
+
+export {
+	Tx,
+	Log,
+}
