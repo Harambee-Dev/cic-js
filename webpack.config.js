@@ -7,7 +7,7 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist-web'),
-    filename: 'cic.web.js',
+    filename: 'cic-client.web.js',
     library: 'cic',
     libraryTarget: 'window'
   },

@@ -9,7 +9,7 @@
   "scripts": {
     "test": "mocha -r ts-node/register tests/*.ts",
     "build": "tsc -d --outDir dist",
-    "pack": "webpack"
+    "pack": "tsc -d --outDir dist && webpack"
   },
   "repository": {
     "type": "git",

@@ -21,9 +21,9 @@ class Conversion {
 		this.tx = tx;
 	}
 
-	public static async processLog(w3:any, registry:Registry, success: boolean, log:Log): Promise<Conversion> {
+	public static async processLog(w3:any, registry:Registry, success: boolean, log:Log) {
 		let conversion:Conversion = undefined;
-		if (log.topics[0] == erc20Topics['convert']) {
+		if (log.topics[0] == topic_convert) {
 			const block = await w3.eth.getBlock(log.blockNumber);
 			const sourceToken_address = w3.utils.toChecksumAddress('0x' + log.topics[1].substring(26, 66));
 			const sourceToken = registry.tokens_r[sourceToken_address];
@@ -34,6 +34,7 @@ class Conversion {
 			const trader = w3.utils.toChecksumAddress('0x' + log.data.substring(154));
 			const tx = new Tx(log.blockNumber, log.transactionIndex, log.transactionHash, block.timestamp, success);
 			conversion = new Conversion(tx, sourceToken, destinationToken, trader, fromValue, toValue);
+			console.log('convert', conversion);
 		}
 		return conversion;
 	}

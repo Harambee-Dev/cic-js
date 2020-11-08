@@ -20,7 +20,7 @@ class Transfer {
 		this.tx = tx;
 	}
 
-	public static async processLog(w3:any, success:boolean, token:string, log:Log): Promise<Transfer> {
+	public static async processLog(w3:any, success:boolean, token:string, log:Log) {
 		let transfer:Transfer = undefined;
 		if (log.topics[0] == topics['transfer']) {
 			const block = await w3.eth.getBlock(log.blockNumber);
