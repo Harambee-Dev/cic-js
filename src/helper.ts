@@ -20,7 +20,7 @@ class TransactionHelper {
 		}
 	}
 
-	async public processReceipt(r:Object) {
+	public async processReceipt(r:Object) {
 		const logs = r.logs;
 		// TODO: Improve (vastly) by inspecting bloom filter instead
 		// TODO: Double check that convert was called on bancornetwork if found

@@ -1,5 +1,5 @@
 const abiFiles = [
-	'bancor_network',
+	'network',
 	'contract_registry',
 	'converter_registry',
 ]
