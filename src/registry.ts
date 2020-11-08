@@ -43,33 +43,35 @@ class Registry {
 		}
 	}
 
-//	async public load(): void {
-//		console.debug('loading registry');
-//		const cr = this.contracts['bancor_contract_registry'];
-//		let crid_hex = this.w3.utils.toHex('BancorConverterRegistry');
-//		let shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
-//		cr.methods.getAddress(shaid).call().then((address) => {
-//			this.contracts['bancor_converter_registry'] = new this.w3.eth.Contract(this.abis.bancor['converter_registry'], address);
-//			this.contracts_r[address] = this.contracts['bancor_converter_registry'];
-//			console.log('bancor converter registry', address);
-//			this.load_tokens();
-//			this.init.network[0]++;
-//			if (this.init.network[0] == this.init.network[1]) {
-//				this.onregistryload(this.init.network[0]);
-//			}
-//		});
-//		crid_hex = this.w3.utils.toHex('BancorNetwork');
-//		shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
-//		cr.methods.getAddress(shaid).call().then((address) => {
-//			this.contracts['bancor_network'] = new this.w3.eth.Contract(this.abis.bancor['network'], address);
-//			this.contracts_r[address] = this.contracts['bancor_network'];
-//			console.log('bancor network', address);
-//			this.init.network[0]++;
-//			if (this.init.network[0] == this.init.network[1]) {
-//				this.onregistryload(this.init.network[0]);
-//			}
-//		});
-//	}
+	async public load(): void {
+		console.debug('loading registry');
+
+		const cr = this.contracts['bancor_contract_registry'];
+		let crid_hex = this.w3.utils.toHex('BancorConverterRegistry');
+		let shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
+		cr.methods.getAddress(shaid).call().then((address) => {
+			this.contracts['bancor_converter_registry'] = new this.w3.eth.Contract(this.abis.bancor['converter_registry'], address);
+			this.contracts_r[address] = this.contracts['bancor_converter_registry'];
+			console.log('bancor converter registry', address);
+			this.load_tokens();
+			this.init.network[0]++;
+			if (this.init.network[0] == this.init.network[1]) {
+				this.onregistryload(this.init.network[0]);
+			}
+		});
+		crid_hex = this.w3.utils.toHex('BancorNetwork');
+		shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
+		cr.methods.getAddress(shaid).call().then((address) => {
+			this.contracts['bancor_network'] = new this.w3.eth.Contract(this.abis.bancor['network'], address);
+			this.contracts_r[address] = this.contracts['bancor_network'];
+			console.log('bancor network', address);
+			this.init.network[0]++;
+			if (this.init.network[0] == this.init.network[1]) {
+				this.onregistryload(this.init.network[0]);
+			}
+		});
+	}
+
 //
 //	async public load_tokens(): void {
 //		console.debug('loading tokens');
