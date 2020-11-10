@@ -1,5 +1,5 @@
 [
-	{
+  {
       "inputs": [],
       "name": "getConvertibleTokens",
       "outputs": [
@@ -12,5 +12,54 @@
       "stateMutability": "view",
       "type": "function",
       "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "_type",
+          "type": "uint16"
+        },
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_symbol",
+          "type": "string"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_decimals",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_maxConversionFee",
+          "type": "uint32"
+        },
+        {
+          "internalType": "contract IERC20Token[]",
+          "name": "_reserveTokens",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint32[]",
+          "name": "_reserveWeights",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "newConverter",
+      "outputs": [
+        {
+          "internalType": "contract IConverter",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
 ]

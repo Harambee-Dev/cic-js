@@ -33,7 +33,7 @@ class Registry {
 		this.tokens_r = {};
 		
 		this.init = {
-			network: [1, 3], // current index, target index
+			network: [1, 4], // current index, target index
 			tokens: [0, -1], // current index, target index
 		}
 
@@ -46,8 +46,9 @@ class Registry {
 	}
 
 	// TODO: DRY
-	public async load() {
+	public async load(loadTokens:boolean=false) {
 		console.debug('loading registry');
+
 
 		const cr = this.contracts['bancor_contract_registry'];
 		let crid_hex = this.w3.utils.toHex('BancorConverterRegistry');
@@ -57,7 +58,13 @@ class Registry {
 			this.contracts['bancor_converter_registry'] = new this.w3.eth.Contract(abi, address);
 			this.contracts_r[address] = this.contracts['bancor_converter_registry'];
 			console.log('bancor converter registry', address);
-			this.load_tokens();
+
+			if (loadTokens) {
+				this.load_tokens();
+			} else {
+				this.ontokensload(0);
+			}
+
 			this.init['network'][0]++;
 			if (this.init['network'][0] == this.init['network'][1]) {
 				this.onregistryload(this.address);
@@ -69,6 +76,17 @@ class Registry {
 			this.contracts['bancor_network'] = new this.w3.eth.Contract(this.abis['bancor']['network'], address);
 			this.contracts_r[address] = this.contracts['bancor_network'];
 			console.log('bancor network', address);
+			this.init['network'][0]++;
+			if (this.init['network'][0] == this.init['network'][1]) {
+				this.onregistryload(this.address);
+			}
+		});
+		crid_hex = this.w3.utils.toHex('BNTToken');
+		shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
+		cr.methods.getAddress(shaid).call().then((address) => {
+			this.contracts['reserve'] = new this.w3.eth.Contract(this.abis['common']['erc20'], address);
+			this.contracts_r[address] = this.contracts['reserve'];
+			console.log('reserve', address);
 			this.init['network'][0]++;
 			if (this.init['network'][0] == this.init['network'][1]) {
 				this.onregistryload(this.address);
@@ -110,6 +128,10 @@ class Registry {
 		//if (this.init.tokens[0] == this.init.tokens[1]) {
 		//	this.ontokenload(this.init.tokens[0]);
 		//}
+	}
+
+	public reserves(): Array<any> {
+		return [this.contracts['reserve']];
 	}
 }
 

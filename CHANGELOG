@@ -1,3 +1,6 @@
+* 0.0.4
+	- Add ABIs for all basic actions on Bancor network
+	- Optional load all convertible tokens to registry
 * 0.0.3
 	- Fix scope problem in transaction processlog callback
 	- Skip callbacks on failed processed transfers and converts
