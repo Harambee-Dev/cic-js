@@ -1,14 +1,30 @@
+/**
+ * Provides processing of Ethereum transaction receipts relevant for the CIC network.
+ *
+ * @module helper
+ */
+
+
 import { Registry } from './registry';
 import { Transfer } from './common/erc20';
 import { Conversion } from './bancor/convert';
 
-// TODO: Is there a way of importing the web3 type instead?
+/**
+ * Reduced, concrete view of a transaction receipt.
+ *
+ * @todo Is there a way of importing the web3 type instead?
+ */
 class Receipt {
 	logs:	Array<any>
 	status:	boolean
 
 }
 
+
+/**
+ * Receipt processor within context of a given registry.
+ *
+ */
 class TransactionHelper {
 
 	w3:		any
@@ -16,6 +32,10 @@ class TransactionHelper {
 	ontransfer:	(Transfer) => void
 	onconversion:	(Conversion) => void
 
+	/**
+	 *
+	 * @param registry The registry context to use
+	 */
 	constructor(registry:Registry) {
 		this.w3 = registry.w3;
 		this.registry = registry;
@@ -28,6 +48,15 @@ class TransactionHelper {
 		}
 	}
 
+	/**
+	 * Processes a single receipt to find conversion and token transfer events.
+	 *
+	 * If a transfer is found, ontransfer callback will be called with a Transfer instance.
+	 * If a conversion is found, onconvsrsion callback will be called with a Conversion instance.
+	 *
+	 * @param r A Web3 transaction receipt.
+	 * @todo The from-amount of convert is currently wrong, but be retrieved from the initial transfer log entry instead.
+	 */
 	public async processReceipt(r:Receipt) {
 		const self = this;
 		const logs = r.logs;

@@ -1,5 +1,13 @@
+/**
+ * Registry is the top-leven entrypoint for all relevant objects in the CIC token exchange network.
+ *
+ * @module registry
+ */
+
 import { Token } from './common/erc20';
 
+
+/** Bancor contract ContractRegistryClient constants to values mapping, used for listing all network contracts. */
 const registryContractIds = {
     'ContraactRegistry': 'ContractRegistry',
     'BancorNetwork': 'BancorNetwork',
@@ -12,6 +20,13 @@ const registryContractIds = {
     'BNTToken': 'BNTToken',
     };
 
+
+/**
+ * 
+ * Provides helper functions and memory cache of Bancor Contract network and tokens.
+ *
+ * @class Registry
+ */
 class Registry {
 
 	w3:		any
@@ -29,6 +44,13 @@ class Registry {
 	onregistryload:	(s:string) => void
 
 
+	/**
+	 *
+	 * @param w3 A connected Web3 object
+	 * @param address Ethereum address of the Bancor ContractRegistry contract
+	 * @param abis All abis loaded from common/abis and bancor/abis
+	 * @todo Introduce abi path to contractid translation
+	 */
 	constructor(w3:any, address:string, abis:Object) {
 		this.w3 = w3;
 		this.abis = abis;
@@ -58,6 +80,11 @@ class Registry {
 	}
 
 
+	/**
+	 * List all network contracts
+	 *
+	 * @return Object with contract ids as keys and contract addresses as values
+	 */
 	public getNetworkContracts(): Promise<Object> {
 		let ids = {};
 		return new Promise(async (whohoo, doh) => {
@@ -75,6 +102,14 @@ class Registry {
 	}
 
 	// TODO: DRY
+	/**
+	 * Loads contract objects necessary for token deployment and conversion into memory.
+	 * Optionally pre-loads all convertible tokens.
+	 *  
+	 * When both the ontokensload and onregistryload callbacks have been called, then all operations have been completed.
+	 *
+	 * @param loadTokens If true, will pre-load all convertible tokens.
+	 */
 	public async load(loadTokens:boolean=false) {
 		console.debug('loading registry');
 
@@ -124,6 +159,10 @@ class Registry {
 	}
 
 
+	/**
+	 * Load all convertible token metadata into registry memory.
+	 *
+	 */
 	public async load_tokens() {
 		console.debug('loading tokens');
 		const cr = this.contracts['bancor_converter_registry'];
@@ -142,6 +181,12 @@ class Registry {
 		});
 	}
 
+	/**
+	 * Add token metadata to registry memory.
+	 *
+	 * @param address Ethereum address of token
+	 *
+	 */
 	public async add_token(address:string) {
 		const abi = this.abis['common']['erc20'];
 		const ct = new this.w3.eth.Contract(abi, address);
@@ -159,6 +204,10 @@ class Registry {
 		//}
 	}
 
+	/**
+	 * List all reserve tokens on network
+	 *
+	 */
 	public reserves(): Array<any> {
 		return [this.contracts['reserve']];
 	}
