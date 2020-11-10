@@ -1,3 +1,5 @@
+* 0.0.7
+	- Add BNTToken to contracts list
 * 0.0.6
 	- Include dist entrypoint file
 * 0.0.5

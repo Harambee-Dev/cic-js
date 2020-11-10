@@ -9,6 +9,7 @@ const registryContractIds = {
     'ConverterRegistry': 'BancorConverterRegistry',
     'ConverterRegistryData': 'BancorConverterRegistryData',
     'ConverterBase': 'ConverterBase',
+    'BNTToken': 'BNTToken',
     };
 
 class Registry {
