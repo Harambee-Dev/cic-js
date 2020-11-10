@@ -1,5 +1,16 @@
 import { Token } from './common/erc20';
 
+const registryContractIds = {
+    'ContraactRegistry': 'ContractRegistry',
+    'BancorNetwork': 'BancorNetwork',
+    'ConverterFactory': 'ConverterFactory',
+    'BancorFormula': 'BancorFormula',
+    'ConversionPathFinder': 'ConversionPathFinder',
+    'ConverterRegistry': 'BancorConverterRegistry',
+    'ConverterRegistryData': 'BancorConverterRegistryData',
+    'ConverterBase': 'ConverterBase',
+    };
+
 class Registry {
 
 	w3:		any
@@ -43,6 +54,23 @@ class Registry {
 		this.onregistryload= function(s:string) {
 			console.debug('registry loaded');
 		}
+	}
+
+
+	public getNetworkContracts(): Promise<Object> {
+		let ids = {};
+		return new Promise(async (whohoo, doh) => {
+			const cr = this.contracts['bancor_contract_registry'];
+			const idList = Object.values(registryContractIds);
+			for (let i = 0; i < idList.length; i++) {
+				const k = idList[i];
+				let crid_hex = this.w3.utils.toHex(k)
+				let shaid = this.w3.eth.abi.encodeParameter('bytes32', crid_hex)
+				const v = await cr.methods.getAddress(shaid).call();
+				ids[k] = v;
+			}
+			whohoo(ids);
+		});
 	}
 
 	// TODO: DRY

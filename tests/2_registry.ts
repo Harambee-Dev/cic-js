@@ -17,7 +17,6 @@ describe('registry', () => {
 		const registry = new Registry(w3, '0x' + hashOfFoo.substring(0, 40), abi);
 	});
 
-	// TODO: hangs, why?
 	it('load', () => {
 		const w3 = new Web3('http://localhost:8545');
 
@@ -45,4 +44,17 @@ describe('registry', () => {
 			assert.fail(e);	
 		});
 	});
+
+	it('contracts_list', async () => {
+		const w3 = new Web3('http://localhost:8545');
+
+		const registry = new Registry(w3, contractRegistry, abi);
+
+		let tokenCount = undefined;
+		let addressReturned = undefined;
+	
+		const list = await registry.getNetworkContracts();
+		console.log(list);
+	});
+
 });

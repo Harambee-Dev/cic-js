@@ -13,7 +13,6 @@ describe('helper', () => {
 	it('new', () => {
 		const w3 = new Web3('http://localhost:8545');
 
-		console.log('foo', abi['bancor']['contract_registry']);
 		const registry = new Registry(w3, contractRegistry, abi);
 
 		const helper = new TransactionHelper(registry);
