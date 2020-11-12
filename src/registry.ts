@@ -122,7 +122,6 @@ class Registry {
 			this.contracts['bancor_converter_registry'] = new this.w3.eth.Contract(abi, address);
 			this.contracts_r[address] = this.contracts['bancor_converter_registry'];
 			console.log('bancor converter registry', address);
-
 			if (loadTokens) {
 				this.load_tokens();
 			} else {
@@ -168,6 +167,10 @@ class Registry {
 		const cr = this.contracts['bancor_converter_registry'];
 		cr.methods.getConvertibleTokens().call().then(async (addresses) => {
 			this.init['tokens'][1] = addresses.length;
+			if (addresses.length == 0) {
+				console.warn('no tokens in network');
+				this.ontokensload(0);
+			}
 			addresses.forEach(async (address) => {
 				this.add_token(address).then(() => {
 					console.debug('l ', this.tokens.length, addresses.length);
