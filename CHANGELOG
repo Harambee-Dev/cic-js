@@ -1,3 +1,5 @@
+* 0.0.10
+	- Add build on install
 * 0.0.9
 	- Add convert2 network method to abis
 * 0.0.8
