@@ -228,6 +228,7 @@ class Registry {
 		const tokenAbi = this.abis['common']['erc20'];
 		const converterAbi = this.abis['bancor']['converter'];
 		const ct = new this.w3.eth.Contract(converterAbi, converterAddress);
+		const reserveRatio = await ct.methods.reserveRatio().call();
 
 		const reserveCount = await ct.methods.reserveTokenCount().call();
 
@@ -240,7 +241,7 @@ class Registry {
 
 			reserves.push(reserve);
 		}
-		return new Converter(converterAddress, reserves);
+		return new Converter(converterAddress, reserveRatio, reserves);
 	}
 
 	/**
