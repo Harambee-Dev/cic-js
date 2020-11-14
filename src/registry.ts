@@ -201,6 +201,7 @@ class Registry {
 		const ct = new this.w3.eth.Contract(abi, address);
 		const symbol = await ct.methods.symbol().call();
 		const name = await ct.methods.name().call();
+		const decimals = await ct.methods.decimals().call();
 		const totalSupply = await ct.methods.totalSupply().call();
 
 		try {
@@ -213,7 +214,7 @@ class Registry {
 			console.log('token ' + address + ' has no owner');
 		}
 
-		const t = new Token(address, name, symbol);
+		const t = new Token(address, name, symbol, totalSupply, decimals);
 		const ti = this.tokens.length;
 		this.tokens.push(t);
 		this.tokens[t.symbol] = this.tokens[ti];

@@ -4,6 +4,7 @@
  * @module erc20
  */
 
+import { BN } from 'bn';
 import { Log, Tx } from './tx';
 
 const topics = {
@@ -74,6 +75,8 @@ class Token {
 
 	address:	string
 	name:		string
+	decimals:	number
+	totalSupply:	BN
 	symbol:		string
 
 	/**
@@ -82,10 +85,12 @@ class Token {
 	 * @param name ERC20 token name
 	 * @param symbol ERC20 token symbol
 	 */
-	constructor(address:string, name:string, symbol:string) {
+	constructor(address:string, name:string, symbol:string, decimals: number, totalSupply:BN) {
 		this.address = address;
 		this.name = name;
 		this.symbol = symbol;
+		this.totalSupply = totalSupply;
+		this.decimals = decimals;
 	}
 
 	/**
