@@ -5,6 +5,7 @@
  */
 
 import { Token } from './common/erc20';
+import { Converter, ReserveConnection } from './bancor/converter';
 
 
 /** Bancor contract ContractRegistryClient constants to values mapping, used for listing all network contracts. */
@@ -31,14 +32,16 @@ class Registry {
 
 	w3:		any
 	address:	string
-	abis:		Object
-	contracts:	Object
-	contracts_r:	Object		// address to contract index
+	abis:		object
+	contracts:	object
+	contracts_r:	object		// address to contract index
 	tokens:		Array<Token>
-	tokens_s:	Object		// symbol string to token index
-	tokens_r:	Object		// address to token index
+	tokens_s:	object		// symbol string to token index
+	tokens_r:	object		// address to token index
 
-	init:		Object
+	converters:	object		// token address to converter
+
+	init:		object
 
 	ontokensload:	(n:number) => void
 	onregistryload:	(s:string) => void
@@ -65,6 +68,8 @@ class Registry {
 		this.tokens = [];
 		this.tokens_s = {};
 		this.tokens_r = {};
+
+		this.converters = {};
 		
 		this.init = {
 			network: [1, 4], // current index, target index
@@ -123,7 +128,7 @@ class Registry {
 			this.contracts_r[address] = this.contracts['bancor_converter_registry'];
 			console.log('bancor converter registry', address);
 			if (loadTokens) {
-				this.load_tokens();
+				this.loadTokens();
 			} else {
 				this.ontokensload(0);
 			}
@@ -162,24 +167,23 @@ class Registry {
 	 * Load all convertible token metadata into registry memory.
 	 *
 	 */
-	public async load_tokens() {
+	public async loadTokens() {
 		console.debug('loading tokens');
 		const cr = this.contracts['bancor_converter_registry'];
-		cr.methods.getConvertibleTokens().call().then(async (addresses) => {
-			this.init['tokens'][1] = addresses.length;
-			if (addresses.length == 0) {
-				console.warn('no tokens in network');
-				this.ontokensload(0);
-			}
-			addresses.forEach(async (address) => {
-				this.add_token(address).then(() => {
-					console.debug('l ', this.tokens.length, addresses.length);
-					if (this.tokens.length == addresses.length) {
-						this.ontokensload(this.tokens.length);
-					}
-				}).catch((e) => {
-					console.error(e);	
-				});
+		const addresses = await cr.methods.getConvertibleTokens().call();
+		this.init['tokens'][1] = addresses.length;
+		if (addresses.length == 0) {
+			console.warn('no tokens in network');
+			this.ontokensload(0);
+		}
+		addresses.forEach(async (address) => {
+			this.addToken(address).then(() => {
+				console.debug('l ', this.tokens.length, addresses.length);
+				if (this.tokens.length == addresses.length) {
+					this.ontokensload(this.tokens.length);
+				}
+			}).catch((e) => {
+				console.error(e);	
 			});
 		});
 	}
@@ -190,11 +194,20 @@ class Registry {
 	 * @param address Ethereum address of token
 	 *
 	 */
-	public async add_token(address:string) {
+	public async addToken(address:string) {
 		const abi = this.abis['common']['erc20'];
 		const ct = new this.w3.eth.Contract(abi, address);
 		const symbol = await ct.methods.symbol().call();
 		const name = await ct.methods.name().call();
+
+		try {
+			const owner = await ct.methods.owner().call();
+			const converter = await this.getConverter(owner);
+			this.converters[address] = converter;
+		} catch {
+			console.log('token ' + address + ' has no owner');
+		}
+
 		const t = new Token(address, name, symbol);
 		const ti = this.tokens.length;
 		this.tokens.push(t);
@@ -205,6 +218,25 @@ class Registry {
 		//if (this.init.tokens[0] == this.init.tokens[1]) {
 		//	this.ontokenload(this.init.tokens[0]);
 		//}
+	}
+
+	public async getConverter(converterAddress:string) {
+		const tokenAbi = this.abis['common']['erc20'];
+		const converterAbi = this.abis['bancor']['converter'];
+		const ct = new this.w3.eth.Contract(converterAbi, converterAddress);
+
+		const reserveCount = await ct.methods.reserveTokenCount().call();
+
+		let reserves = [];
+		for (let i = 0; i < reserveCount; i++) {
+			const reserveAddress = await ct.methods.reserveTokens(i).call();
+			const weight = await ct.methods.reserveWeight(reserveAddress).call();
+			const balance = await ct.methods.reserveBalance(reserveAddress).call();
+			const reserve = new ReserveConnection(reserveAddress, weight, balance);
+
+			reserves.push(reserve);
+		}
+		return new Converter(converterAddress, reserves);
 	}
 
 	/**
