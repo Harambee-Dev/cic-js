@@ -214,7 +214,7 @@ class Registry {
 			console.log('token ' + address + ' has no owner');
 		}
 
-		const t = new Token(address, name, symbol, totalSupply, decimals);
+		const t = new Token(address, name, symbol, decimals, totalSupply);
 		const ti = this.tokens.length;
 		this.tokens.push(t);
 		this.tokens[t.symbol] = this.tokens[ti];
