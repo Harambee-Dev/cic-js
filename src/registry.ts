@@ -201,6 +201,7 @@ class Registry {
 		const ct = new this.w3.eth.Contract(abi, address);
 		const symbol = await ct.methods.symbol().call();
 		const name = await ct.methods.name().call();
+		const totalSupply = await ct.methods.totalSupply().call();
 
 		try {
 			const owner = await ct.methods.owner().call();
