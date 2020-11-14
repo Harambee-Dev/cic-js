@@ -10,7 +10,7 @@ import { Converter, ReserveConnection } from './bancor/converter';
 
 /** Bancor contract ContractRegistryClient constants to values mapping, used for listing all network contracts. */
 const registryContractIds = {
-    'ContraactRegistry': 'ContractRegistry',
+    'ContractRegistry': 'ContractRegistry',
     'BancorNetwork': 'BancorNetwork',
     'ConverterFactory': 'ConverterFactory',
     'BancorFormula': 'BancorFormula',
@@ -39,7 +39,8 @@ class Registry {
 	tokens_s:	object		// symbol string to token index
 	tokens_r:	object		// address to token index
 
-	converters:	object		// token address to converter
+	converters:	object		
+	converters_t:	object		// token address to converter
 
 	init:		object
 
@@ -70,6 +71,7 @@ class Registry {
 		this.tokens_r = {};
 
 		this.converters = {};
+		this.converters_t = {};
 		
 		this.init = {
 			network: [1, 4], // current index, target index
@@ -202,8 +204,10 @@ class Registry {
 
 		try {
 			const owner = await ct.methods.owner().call();
-			const converter = await this.getConverter(owner);
-			this.converters[address] = converter;
+			if (this.converters[owner] === undefined) {
+				this.converters[owner] = await this.getConverter(owner);
+			}
+			this.converters_t[address] = this.converters[owner];
 		} catch {
 			console.log('token ' + address + ' has no owner');
 		}
