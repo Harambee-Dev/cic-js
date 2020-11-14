@@ -1,6 +1,6 @@
 {
   "name": "cic-client",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Typescript libraries for building CIC client applications",
   "main": "dist/index.js",
   "directories": {
