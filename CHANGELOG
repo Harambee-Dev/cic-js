@@ -1,3 +1,5 @@
+* 0.0.20
+	- Add rate by path (price quote) to abi definition for network
 * 0.0.19
 	- Add omitted address in reserve connection
 * 0.0.18
