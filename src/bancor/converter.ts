@@ -19,7 +19,6 @@ class Converter {
 	reserves:	Array<ReserveConnection>
 
 	constructor(address:string, owner:string, reserveRatio:number, reserves:Array<ReserveConnection>) {
-		console.log('owner', owner);
 		this.owner = owner;
 		this.address = address;
 		this.reserves = reserves;
