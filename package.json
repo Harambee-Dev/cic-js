@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha -r ts-node/register tests/2_*.ts",
+    "test": "mocha -r ts-node/register tests/*.ts",
     "build": "tsc -d --outDir dist",
     "pack": "tsc -d --outDir dist && webpack",
     "clean": "rm -rf dist",
