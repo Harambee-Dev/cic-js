@@ -1,13 +1,13 @@
 {
   "name": "cic-client",
-  "version": "0.0.22",
+  "version": "0.1.0",
   "description": "Typescript libraries for building CIC client applications",
   "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha -r ts-node/register tests/*.ts",
+    "test": "mocha -r ts-node/register tests/2_*.ts",
     "build": "tsc -d --outDir dist",
     "pack": "tsc -d --outDir dist && webpack",
     "clean": "rm -rf dist",
@@ -39,6 +39,7 @@
   "dependencies": {
     "@types/web3": "^1.2.2",
     "bn": "^1.0.5",
+    "lru-cache": "^6.0.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.5",
     "web3": "^1.3.0",
