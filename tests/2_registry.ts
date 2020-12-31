@@ -10,6 +10,8 @@ const contractRegistry = '0xb708175e3f6Cd850643aAF7B32212AFad50e2549'; // addres
 const dataPath = [__dirname + '/testdata/solidity'];
 
 const tokenDeclarator = '0x5567139c7a1C2977A391f51D8cA45B1D6700f5F6';
+//const contractDeployer = '0xEb3907eCad74a0013c259D5874AE7f22DcBcC95C';
+const tokenOwner = '0x5567139c7a1C2977A391f51D8cA45B1D6700f5F6';
 
 
 // TODO: mock web3
@@ -38,6 +40,17 @@ describe('registry', () => {
 
 		//const token = await registry.getTokenByDeclaration('TokenRegistry', tokenDeclarator, 0);
 		const token = await registry.getTokenBySymbol('TokenRegistry', 'SFU');
+
+	});
+
+	it('declaration', async() => {
+		const w3 = new Web3(provider);
+
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', dataPath);
+		await registry.load();
+
+		const token = await registry.getTokenBySymbol('TokenRegistry', 'SFU');
+		const contract = await registry.getTokenDeclaration('AddressDeclarator', tokenOwner, token.options.address);
 
 	});
 

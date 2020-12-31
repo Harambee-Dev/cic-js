@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-import { abi, bin } from '../src/data';
+import { abi, bin } from '../src/solidity';
 
 const okPaths = [__dirname, __dirname + '/testdata', __dirname + '/testdata/solidity'];
 const failPaths = [__dirname, __dirname + '/testdata'];

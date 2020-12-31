@@ -62,21 +62,26 @@ class CICRegistry {
 	}
 
 	public async getContractByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<EVMContract> {
+		const contractAddress = await this.getContractAddressByName(contractName, abiName, requireInterfaces);
 		if (abiName === undefined) {
 			abiName = contractName;
 		}
 		const contractAbi = this.getAbi(abiName);
 		console.log(contractAbi);
+		const contract = new this.w3.eth.Contract(contractAbi, contractAddress);
+		this.store.put('contract:' + contractName, contract);
+		console.debug('added contract', contractName, contractAddress);
+		return contract;
+	}
+
+	public async getContractAddressByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<string> {
 		const contract_id_hex = this.w3.utils.toHex(contractName);
 		const contract_id = this.w3.eth.abi.encodeParameter('bytes32', contract_id_hex);
 		const contractAddress = await this.contract.methods.addressOf(contract_id).call();
 		if (contractAddress == zeroAddress) {
 			throw 'unknown contract ' + contractName;
 		}
-		const contract = new this.w3.eth.Contract(contractAbi, contractAddress);
-		this.store.put('contract:' + contractName, contract);
-		console.debug('added contract', contractName, contractAddress);
-		return contract;
+		return contractAddress;
 	}
 
 	public async getFungibleToken(tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
@@ -87,9 +92,10 @@ class CICRegistry {
 				throw 'token does not declare ERC20 interface support';
 			}
 		}
+		return tokenContract;
 	}
 
-	public async getTokenByDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, index:number, checkInterface:boolean=false): Promise<FungibleToken> {
+	public async getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		const contractKey = toContractKey(tokenRegistryContractName);
 		let tokenRegistryContract = this.store.get(contractKey);
 		if (tokenRegistryContract === undefined) {
@@ -100,12 +106,12 @@ class CICRegistry {
 			);
 			this.store.put(contractKey, tokenRegistryContract);
 		}
-		const tokenAddress = await tokenRegistryContract.methods.declarationAddressAt(declarator, index).call();
-		if (tokenAddress === zeroAddress) {
-			throw 'received zeroaddress as declarator';
+		const declarationParts = await tokenRegistryContract.methods.declaration(declarator, tokenAddress).call();
+		if (declarationParts.length == 0) {
+			throw 'no declarations found for declarator "' + declarator + '" address "' + tokenAddress + '"';
 		}
-		console.log(tokenAddress);
-		const token = this.getFungibleToken(tokenAddress, checkInterface);
+		console.log(declarationParts);
+		return declarationParts;
 	}
 
 	public async getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean=false): Promise<FungibleToken> {
