@@ -1,7 +1,7 @@
-const fs = require('fs');
 const path = require('path');
 
 import { EVMMethodID } from './typ';
+import { FileGetter } from './file';
 
 const interfaceCodes = {
 	ERC20: '1da30d20',
@@ -9,17 +9,17 @@ const interfaceCodes = {
 	Declarator: '00000000', // TODO: calculate
 };
 
-function abi(interface_name:string, paths:string[]): Object {
-	const d = findInPath(interface_name, 'json', paths);
+async function abi(fileGetter:FileGetter, interface_name:string, paths:string[]): Promise<Object> {
+	const d = await findInPath(fileGetter, interface_name, 'json', paths);
 	return JSON.parse(d);
 }
 
-function bin(interface_name:string, paths:string[]): string {
-	const d = findInPath(interface_name, 'bin', paths);
+async function bin(fileGetter:FileGetter, interface_name:string, paths:string[]): Promise<string> {
+	const d = await findInPath(fileGetter, interface_name, 'bin', paths);
 	return new TextDecoder('utf-8').decode(d);
 }
 
-function findInPath(stem:string, extension:string, paths:string[]): any {
+async function findInPath(fileGetter:FileGetter, stem:string, extension:string, paths:string[]): Promise<any> {
 	const filename = stem + '.' + extension;
 	let found = false;
 	for (let i = 0; i < paths.length; i++) {
@@ -27,13 +27,14 @@ function findInPath(stem:string, extension:string, paths:string[]): any {
 		let d;
 		console.debug('findInPath search ' + filePath);
 		try {
-			return fs.readFileSync(filePath); //, {encoding: 'utf-8'});
-		} catch {
+			return await fileGetter.get(filePath);
+		} catch(e) {
+			console.error(e);
 			continue;
 		}
 	}
 	if (!found) {
-		throw 'file ' + filename + ' not found in data path';
+		throw new Error('file ' + filename + ' not found in data path');
 	}
 }
 

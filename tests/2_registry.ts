@@ -3,6 +3,7 @@ const assert = require('assert');
 const Web3 = require('web3');
 
 import { CICRegistry } from '../src/registry';
+import { FsFileGetter } from '../src/file';
 
 const provider = 'http://localhost:63545';
 const hashOfFoo = '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae';
@@ -13,20 +14,21 @@ const tokenDeclarator = '0x5567139c7a1C2977A391f51D8cA45B1D6700f5F6';
 //const contractDeployer = '0xEb3907eCad74a0013c259D5874AE7f22DcBcC95C';
 const tokenOwner = '0x5567139c7a1C2977A391f51D8cA45B1D6700f5F6';
 
+const getter = new FsFileGetter();
 
 // TODO: mock web3
 describe('registry', () => {
 	it('new', async () => {
 		const w3 = new Web3(provider);
 
-		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', dataPath);
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', getter, dataPath);
 		await registry.load();
 	});
 
 	it('contract', async () => {
 		const w3 = new Web3(provider);
 
-		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', dataPath);
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', getter, dataPath);
 		await registry.load();
 		const accountsIndexContract = await registry.getContractByName('AccountRegistry');
 		console.log(accountsIndexContract.address);
@@ -35,21 +37,31 @@ describe('registry', () => {
 	it('token', async () => {
 		const w3 = new Web3(provider);
 
-		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', dataPath);
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', getter, dataPath);
 		await registry.load();
 
 		//const token = await registry.getTokenByDeclaration('TokenRegistry', tokenDeclarator, 0);
-		const token = await registry.getTokenBySymbol('TokenRegistry', 'SFU');
+		const token = await registry.getTokenBySymbol('TokenRegistry', 'SRF');
 
+	});
+
+	it('addToken', async() => {
+		const w3 = new Web3(provider);
+
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', getter, dataPath);
+		await registry.load();
+
+		//const token = await registry.getTokenBySymbol('TokenRegistry', 'SRF');
+		const token = await registry.addToken('0x528c3E8B3e6dC646530440D88F83da0e45DaC25b');
 	});
 
 	it('declaration', async() => {
 		const w3 = new Web3(provider);
 
-		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', dataPath);
+		const registry = new CICRegistry(w3, '0x4f8af296202Bff3B8589DA4Af87A8cfe74ad4d3A', getter, dataPath);
 		await registry.load();
 
-		const token = await registry.getTokenBySymbol('TokenRegistry', 'SFU');
+		const token = await registry.getTokenBySymbol('TokenRegistry', 'SRF');
 		const contract = await registry.getTokenDeclaration('AddressDeclarator', tokenOwner, token.options.address);
 
 	});

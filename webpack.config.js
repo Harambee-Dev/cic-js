@@ -18,8 +18,9 @@ module.exports = {
   stats: 'errors-only',
   resolve: {
 	  fallback: {
-		  "path": false,
 		  "fs": false,
+		  "crypto": false,
+		  "path": require.resolve("path-browserify"),
 	  },
 	  extensions: [".js", ".json"],
   },
