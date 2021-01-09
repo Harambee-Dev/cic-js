@@ -1,9 +1,11 @@
-import {DeclaratorHelper, TokenHelper} from "./helper";
+import {DeclaratorHelper} from "./helper";
 
 const LRU = require('lru-cache');
-import { abi } from './solidity';
+import { abi, interfaceCodes } from './solidity';
 import { zeroAddress } from './const';
 import { EVMMethodID, EVMAddress, EVMContract, FungibleToken } from './typ';
+import { subtle } from './crypto';
+import { bytesToHex } from './digest';
 import { FileGetter } from './file';
 
 class KV {
@@ -45,7 +47,6 @@ class CICRegistry {
 	chainSpecs: Object
 	onload: (a:string) => void
 	declaratorHelper: DeclaratorHelper
-	tokenHelper: TokenHelper
 
 	constructor(w3:any, address:EVMAddress, fileGetter:FileGetter, paths?:string[]) {
 		this.w3 = w3;
@@ -54,7 +55,6 @@ class CICRegistry {
 		this.paths = paths;
 		this.fileGetter = fileGetter;
 		this.declaratorHelper = new DeclaratorHelper(this);
-		this.tokenHelper = new TokenHelper(this);
 	}
 
 	public addTrust(address:EVMAddress) {
@@ -123,7 +123,12 @@ class CICRegistry {
 	}
 
 	public async getToken(address:EVMAddress): Promise<EVMContract> {
-		return await this.tokenHelper.getToken(address);
+		const tokenContract = await this.getContract(address);
+		const tokenSymbol = await tokenContract.methods.symbol().call();
+		if (tokenSymbol === undefined) {
+			throw new Error('contract ' + address + ' is not an ERC20 token');
+		}
+		return tokenContract;
 	}
 
 	public async getContractByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<EVMContract> {
@@ -150,13 +155,63 @@ class CICRegistry {
 		return contractAddress;
 	}
 
+	public async getFungibleToken(tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
+		const tokenAbi = await this.getAbi('ERC20');
+		const tokenContract = new this.w3.eth.Contract(tokenAbi, tokenAddress);
+		if (checkInterface) {
+			if (!tokenContract.methods.supportsInterface('ERC20')) {
+				throw 'token does not declare ERC20 interface support';
+			}
+		}
+		const tokenSymbol = await tokenContract.methods.symbol().call();
+		this.store.put('token:' + tokenSymbol, tokenContract);
+		this.store.put(tokenAddress, tokenContract);
+		return tokenContract;
+	}
+
 	public async getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		return await this.declaratorHelper.getTrustedTokenDeclaration(tokenRegistryContractName, tokenAddress, checkInterface);
 	}
 
 	public async getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean=false): Promise<FungibleToken> {
-		return await this.tokenHelper.getTokenBySymbol(tokenRegistryContractName, symbol, checkInterface);
+		const contractKey = toContractKey(tokenRegistryContractName);
+		let tokenRegistryContract = this.store.get(contractKey);
+		if (tokenRegistryContract === undefined) {
+			tokenRegistryContract = await this.getContractByName(
+				tokenRegistryContractName,
+				'Registry',
+				[interfaceCodes.Registry],
+			);
+			this.store.put(contractKey, tokenRegistryContract);
+			this.store.put(tokenRegistryContract.options.address, tokenRegistryContract);
+		}
+		const symbolId = await toRegistryKey(symbol);
+		const tokenAddress = await tokenRegistryContract.methods.addressOf(symbolId).call();
+		if (tokenAddress === zeroAddress) {
+			throw 'unknown token "' + symbol + '" using registry "' + tokenRegistryContractName + '"';
+		}
+		console.log(tokenAddress);
+		const token = this.getFungibleToken(tokenAddress, checkInterface);
+		return token;
 	}
+
+	public addToStore(key: string, value: EVMContract): void {
+		this.store.put(key, value);
+	}
+
+	public fetchFromStore(key: string): EVMContract {
+		this.store.get(key)
+	}
+}
+
+async function toRegistryKey(s:string): Promise<string> {
+	const sDigest = await subtle.digest('SHA-256', s);
+	const sId = '0x' + bytesToHex(sDigest);
+	return sId;
+}
+
+function toContractKey(s:string): string {
+	return 'contract:' + s;
 }
 
 function toAbiKey(s:string): string {
@@ -170,4 +225,5 @@ function toTokenKey(s:string): string {
 export {
 	CICRegistry,
 	Registry,
+	toContractKey
 }
