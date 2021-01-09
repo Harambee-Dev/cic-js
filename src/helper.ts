@@ -74,16 +74,15 @@ class TransactionHelper {
 			} catch(e) {
 				try {
 					const d = await this.registry.getAddressDeclaration('AddressDeclarator', contractAddress);
+					console.debug('trust record for ' + contractAddress + ' found', d);
 					const t = await this.registry.addToken(contractAddress);
 					token_txs.push([r.status, t, logs[i]]);
 				} catch(e) {
-					console.error(e);
 					try {
 						await this.registry.getContract(contractAddress);
 						convert_log = logs[i];
 						break;
 					} catch(e) {
-						console.error(e);
 						continue;
 					}
 
@@ -143,6 +142,7 @@ class DeclaratorHelper {
 	 */
 	public async getTrustedTokenDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		for (let i = 0; i < this.trusts.length; i++) {
+			console.debug('checking for trust record by ' + this.trusts[i] + ' for token ' + tokenAddress);
 			try {
 				return this.registry.getTokenDeclaration(tokenRegistryContractName, this.trusts[i], tokenAddress,checkInterface);
 			} catch {
