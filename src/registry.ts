@@ -1,9 +1,9 @@
+import {DeclaratorHelper, TokenHelper} from "./helper";
+
 const LRU = require('lru-cache');
-import { abi, bin, interfaceCodes } from './solidity';
+import { abi } from './solidity';
 import { zeroAddress } from './const';
 import { EVMMethodID, EVMAddress, EVMContract, FungibleToken } from './typ';
-import { subtle } from './crypto';
-import { bytesToHex } from './digest';
 import { FileGetter } from './file';
 
 class KV {
@@ -29,8 +29,7 @@ interface Registry {
 	getContractAddressByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<string>;
 	getToken(address:EVMAddress): Promise<FungibleToken>;
 	getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean): Promise<FungibleToken>;
-	getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
-	getTrustedTokenDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
+	getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
 	addToken(address:EVMAddress): Promise<EVMContract>;
 	addTrust(address:EVMAddress);
 }
@@ -44,20 +43,22 @@ class CICRegistry {
 	store: KV 
 	paths: string[]
 	chainSpecs: Object
-	trusts: EVMAddress[]
 	onload: (a:string) => void
+	declaratorHelper: DeclaratorHelper
+	tokenHelper: TokenHelper
 
-	constructor(w3:any, address:EVMAddress, fileGetter:FileGetter, paths:string[]=['.']) {
+	constructor(w3:any, address:EVMAddress, fileGetter:FileGetter, paths?:string[]) {
 		this.w3 = w3;
 		this.address = address;
 		this.store = new KV();
 		this.paths = paths;
 		this.fileGetter = fileGetter;
-		this.trusts = [];
+		this.declaratorHelper = new DeclaratorHelper(this);
+		this.tokenHelper = new TokenHelper(this);
 	}
 
 	public addTrust(address:EVMAddress) {
-		this.trusts.push(address);
+		this.declaratorHelper.addTrust(address);
 	}
 
 	public async load() {
@@ -122,12 +123,7 @@ class CICRegistry {
 	}
 
 	public async getToken(address:EVMAddress): Promise<EVMContract> {
-		const tokenContract = await this.getContract(address);
-		const tokenSymbol = await tokenContract.methods.symbol().call();
-		if (tokenSymbol === undefined) {
-			throw new Error('contract ' + address + ' is not an ERC20 token');
-		}
-		return tokenContract;
+		return await this.tokenHelper.getToken(address);
 	}
 
 	public async getContractByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<EVMContract> {
@@ -154,81 +150,13 @@ class CICRegistry {
 		return contractAddress;
 	}
 
-	public async getFungibleToken(tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
-		const tokenAbi = await this.getAbi('ERC20');
-		const tokenContract = new this.w3.eth.Contract(tokenAbi, tokenAddress);
-		if (checkInterface) {
-			if (!tokenContract.methods.supportsInterface('ERC20')) {
-				throw 'token does not declare ERC20 interface support';
-			}
-		}
-		const tokenSymbol = await tokenContract.methods.symbol().call();
-		this.store.put('token:' + tokenSymbol, tokenContract);
-		this.store.put(tokenAddress, tokenContract);
-		return tokenContract;
-	}
-
-	public async getTrustedTokenDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
-		for (let i = 0; i < this.trusts.length; i++) {
-			console.debug('checking for trust record by ' + this.trusts[i] + ' for token ' + tokenAddress);
-			try {
-				return this.getTokenDeclaration(tokenRegistryContractName, this.trusts[i], tokenAddress,checkInterface);
-			} catch {
-			}
-		}
-		throw new Error('no trusted records for token ' + tokenAddress);
-	}
-
-	public async getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
-		const contractKey = toContractKey(tokenRegistryContractName);
-		let tokenRegistryContract = this.store.get(contractKey);
-		if (tokenRegistryContract === undefined) {
-			tokenRegistryContract = await this.getContractByName(
-				tokenRegistryContractName,
-				'AddressDeclarator',
-				[interfaceCodes.Declarator],
-			);
-			this.store.put(contractKey, tokenRegistryContract);
-		}
-		const declarationParts = await tokenRegistryContract.methods.declaration(declarator, tokenAddress).call();
-		if (declarationParts.length == 1 && declarationParts[0] == zeroAddress) {
-			throw new Error('no declarations found for declarator "' + declarator + '" address "' + tokenAddress + '"');
-		}
-		console.log(declarationParts);
-		return declarationParts;
+	public async getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
+		return await this.declaratorHelper.getTrustedTokenDeclaration(tokenRegistryContractName, tokenAddress, checkInterface);
 	}
 
 	public async getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean=false): Promise<FungibleToken> {
-		const contractKey = toContractKey(tokenRegistryContractName);
-		let tokenRegistryContract = this.store.get(contractKey);
-		if (tokenRegistryContract === undefined) {
-			tokenRegistryContract = await this.getContractByName(
-				tokenRegistryContractName,
-				'Registry',
-				[interfaceCodes.Registry],
-			);
-			this.store.put(contractKey, tokenRegistryContract);
-			this.store.put(tokenRegistryContract.options.address, tokenRegistryContract);
-		}
-		const symbolId = await toRegistryKey(symbol);
-		const tokenAddress = await tokenRegistryContract.methods.addressOf(symbolId).call();
-		if (tokenAddress === zeroAddress) {
-			throw 'unknown token "' + symbol + '" using registry "' + tokenRegistryContractName + '"';
-		}
-		console.log(tokenAddress);
-		const token = this.getFungibleToken(tokenAddress, checkInterface);
-		return token;
+		return await this.tokenHelper.getTokenBySymbol(tokenRegistryContractName, symbol, checkInterface);
 	}
-}
-
-async function toRegistryKey(s:string): Promise<string> {
-	const sDigest = await subtle.digest('SHA-256', s);
-	const sId = '0x' + bytesToHex(sDigest);
-	return sId;
-}
-
-function toContractKey(s:string): string {
-	return 'contract:' + s;
 }
 
 function toAbiKey(s:string): string {

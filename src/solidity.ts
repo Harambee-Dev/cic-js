@@ -22,15 +22,23 @@ async function bin(fileGetter:FileGetter, interface_name:string, paths:string[])
 async function findInPath(fileGetter:FileGetter, stem:string, extension:string, paths:string[]): Promise<any> {
 	const filename = stem + '.' + extension;
 	let found = false;
-	for (let i = 0; i < paths.length; i++) {
-		const filePath = path.join(paths[i], filename);
-		let d;
-		console.debug('findInPath search ' + filePath);
+	if (paths === undefined) {
 		try {
-			return await fileGetter.get(filePath);
+			return await fileGetter.get(filename);
 		} catch(e) {
 			console.error(e);
-			continue;
+		}
+	} else {
+		for (let i = 0; i < paths.length; i++) {
+			const filePath = path.join(paths[i], filename);
+			let d;
+			console.debug('findInPath search ' + filePath);
+			try {
+				return await fileGetter.get(filePath);
+			} catch(e) {
+				console.error(e);
+				continue;
+			}
 		}
 	}
 	if (!found) {
