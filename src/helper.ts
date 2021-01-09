@@ -5,12 +5,10 @@
  */
 
 
-import {CICRegistry, Registry, toContractKey} from './registry';
+import {Registry} from './registry';
 import { Transfer } from './common/erc20';
 import { Conversion } from './bancor/convert';
 import {EVMAddress, FungibleToken} from "./typ";
-import {interfaceCodes} from "./solidity";
-import {zeroAddress} from "./const";
 
 /**
  * Reduced, concrete view of a transaction receipt.
@@ -70,26 +68,22 @@ class TransactionHelper {
 		for (let i = 0; i < logs.length; i++) {
 			// TODO: this seems like a very brittle test, improve
 			const contractAddress = logs[i].address;
-			//if (this.registry.contracts_r[contractAddress] !== undefined) {
 			try {
 				const t = await this.registry.getToken(contractAddress);
 				token_txs.push([r.status, t, logs[i]]);
 			} catch(e) {
 				try {
 					const d = await this.registry.getAddressDeclaration('AddressDeclarator', contractAddress);
-					console.debug('trust record for ' + contractAddress + ' found', d);
 					const t = await this.registry.addToken(contractAddress);
 					token_txs.push([r.status, t, logs[i]]);
 				} catch(e) {
-					console.debug('fisrst error', e);
+					console.error(e);
 					try {
 						await this.registry.getContract(contractAddress);
 						convert_log = logs[i];
-						console.debug('found bancornetwork tx');
 						break;
 					} catch(e) {
-						console.debug('second error', e);
-						console.debug('no match in log entry ' + i);
+						console.error(e);
 						continue;
 					}
 
@@ -117,7 +111,7 @@ class TransactionHelper {
  */
 class DeclaratorHelper {
 
-	registry: CICRegistry
+	registry: Registry
 	trusts: EVMAddress[]
 
 	/**
@@ -149,40 +143,12 @@ class DeclaratorHelper {
 	 */
 	public async getTrustedTokenDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		for (let i = 0; i < this.trusts.length; i++) {
-			console.debug('checking for trust record by ' + this.trusts[i] + ' for token ' + tokenAddress);
 			try {
-				return this.getTokenDeclaration(tokenRegistryContractName, this.trusts[i], tokenAddress,checkInterface);
+				return this.registry.getTokenDeclaration(tokenRegistryContractName, this.trusts[i], tokenAddress,checkInterface);
 			} catch {
 			}
 		}
 		throw new Error('no trusted records for token ' + tokenAddress);
-	}
-
-	/**
-	 * Check for trust records for a token by a declarator.
-	 *
-	 * @param tokenRegistryContractName The name of the token in the token registry.
-	 * @param declarator The address of the declarator used to check for trust.
-	 * @param tokenAddress The address of the contract used to deploy the token.
-	 * @param checkInterface A boolean on whether to to check the interface.
-	 */
-	public async getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
-		const contractKey = toContractKey(tokenRegistryContractName);
-		let tokenRegistryContract = await this.registry.fetchFromStore(contractKey);
-		if (tokenRegistryContract === undefined) {
-			tokenRegistryContract = await this.registry.getContractByName(
-				tokenRegistryContractName,
-				'AddressDeclarator',
-				[interfaceCodes.Declarator],
-			);
-			this.registry.addToStore(contractKey, tokenRegistryContract);
-		}
-		const declarationParts = await tokenRegistryContract.methods.declaration(declarator, tokenAddress).call();
-		if (declarationParts.length == 1 && declarationParts[0] == zeroAddress) {
-			throw new Error('no declarations found for declarator "' + declarator + '" address "' + tokenAddress + '"');
-		}
-		console.log(declarationParts);
-		return declarationParts;
 	}
 }
 

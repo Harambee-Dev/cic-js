@@ -32,7 +32,6 @@ async function findInPath(fileGetter:FileGetter, stem:string, extension:string, 
 		for (let i = 0; i < paths.length; i++) {
 			const filePath = path.join(paths[i], filename);
 			let d;
-			console.debug('findInPath search ' + filePath);
 			try {
 				return await fileGetter.get(filePath);
 			} catch(e) {

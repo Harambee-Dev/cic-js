@@ -31,6 +31,7 @@ interface Registry {
 	getContractAddressByName(contractName:string, abiName?:string, requireInterfaces?:EVMMethodID[]): Promise<string>;
 	getToken(address:EVMAddress): Promise<FungibleToken>;
 	getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean): Promise<FungibleToken>;
+	getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
 	getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
 	addToken(address:EVMAddress): Promise<EVMContract>;
 	addTrust(address:EVMAddress);
@@ -44,7 +45,6 @@ class CICRegistry {
 	contract: any // TODO: replace with web3 contract type
 	store: KV 
 	paths: string[]
-	chainSpecs: Object
 	onload: (a:string) => void
 	declaratorHelper: DeclaratorHelper
 
@@ -86,19 +86,6 @@ class CICRegistry {
 		return abiObject;
 	}
 
-//	public async getUnknownContract(address:EVMAddress): Promise<EVMContract> {
-//		const declarator = this.registry.getContractByName('AddressDeclarator', 'Declarator');
-//		for (let i = 0; i < this.trusts; i++) {
-//			const declarationRecord = declarator.getDeclaration();
-//			if (declarationRecord !== undefined) {
-//				const tokenAbi = this.getAbi('ERC20');
-//				const contract = new this.w3.eth.Contract(tokenAbi, address);
-//				const tokenSymbol = contract.methods.symbol();
-//			}
-//		}
-//		throw new Error('no trusted records found for address ' + address;
-//	}
-
 	public async addToken(address:EVMAddress, requireTrust:boolean=false): Promise<EVMContract> {
 		if (requireTrust) {
 			throw new Error('trust check not implemented yet, sorry');
@@ -137,11 +124,9 @@ class CICRegistry {
 			abiName = contractName;
 		}
 		const contractAbi = await this.getAbi(abiName);
-		console.log(contractAbi);
 		const contract = new this.w3.eth.Contract(contractAbi, contractAddress);
 		this.store.put('contract:' + contractName, contract);
 		this.store.put(contractAddress, contract);
-		console.debug('added contract', contractName, contractAddress);
 		return contract;
 	}
 
@@ -173,6 +158,24 @@ class CICRegistry {
 		return await this.declaratorHelper.getTrustedTokenDeclaration(tokenRegistryContractName, tokenAddress, checkInterface);
 	}
 
+	public async getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
+		const contractKey = toContractKey(tokenRegistryContractName);
+		let tokenRegistryContract = await this.store.get(contractKey);
+		if (tokenRegistryContract === undefined) {
+			tokenRegistryContract = await this.getContractByName(
+				tokenRegistryContractName,
+				'AddressDeclarator',
+				[interfaceCodes.Declarator],
+			);
+			this.store.put(contractKey, tokenRegistryContract);
+		}
+		const declarationParts = await tokenRegistryContract.methods.declaration(declarator, tokenAddress).call();
+		if (declarationParts.length == 1 && declarationParts[0] == zeroAddress) {
+			throw new Error('no declarations found for declarator "' + declarator + '" address "' + tokenAddress + '"');
+		}
+		return declarationParts;
+	}
+
 	public async getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean=false): Promise<FungibleToken> {
 		const contractKey = toContractKey(tokenRegistryContractName);
 		let tokenRegistryContract = this.store.get(contractKey);
@@ -190,17 +193,8 @@ class CICRegistry {
 		if (tokenAddress === zeroAddress) {
 			throw 'unknown token "' + symbol + '" using registry "' + tokenRegistryContractName + '"';
 		}
-		console.log(tokenAddress);
 		const token = this.getFungibleToken(tokenAddress, checkInterface);
 		return token;
-	}
-
-	public addToStore(key: string, value: EVMContract): void {
-		this.store.put(key, value);
-	}
-
-	public fetchFromStore(key: string): EVMContract {
-		this.store.get(key)
 	}
 }
 
