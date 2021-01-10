@@ -1,4 +1,4 @@
-import {DeclaratorHelper} from "./helper";
+import {DeclaratorHelper, TokenHelper} from "./helper";
 
 const LRU = require('lru-cache');
 import { abi, interfaceCodes } from './solidity';
@@ -47,6 +47,7 @@ class CICRegistry {
 	paths: string[]
 	onload: (a:string) => void
 	declaratorHelper: DeclaratorHelper
+	tokenHelper: TokenHelper
 
 	constructor(w3:any, address:EVMAddress, fileGetter:FileGetter, paths?:string[]) {
 		this.w3 = w3;
@@ -55,6 +56,7 @@ class CICRegistry {
 		this.paths = paths;
 		this.fileGetter = fileGetter;
 		this.declaratorHelper = new DeclaratorHelper(this);
+		this.tokenHelper = new TokenHelper(w3, this);
 	}
 
 	public addTrust(address:EVMAddress) {
@@ -140,27 +142,13 @@ class CICRegistry {
 		return contractAddress;
 	}
 
-	public async getFungibleToken(tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
-		const tokenAbi = await this.getAbi('ERC20');
-		const tokenContract = new this.w3.eth.Contract(tokenAbi, tokenAddress);
-		if (checkInterface) {
-			if (!tokenContract.methods.supportsInterface('ERC20')) {
-				throw 'token does not declare ERC20 interface support';
-			}
-		}
-		const tokenSymbol = await tokenContract.methods.symbol().call();
-		this.store.put('token:' + tokenSymbol, tokenContract);
-		this.store.put(tokenAddress, tokenContract);
-		return tokenContract;
-	}
-
 	public async getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		return await this.declaratorHelper.getTrustedTokenDeclaration(tokenRegistryContractName, tokenAddress, checkInterface);
 	}
 
 	public async getTokenDeclaration(tokenRegistryContractName:string, declarator:EVMAddress, tokenAddress:EVMAddress, checkInterface:boolean=false): Promise<FungibleToken> {
 		const contractKey = toContractKey(tokenRegistryContractName);
-		let tokenRegistryContract = await this.store.get(contractKey);
+		let tokenRegistryContract = this.store.get(contractKey);
 		if (tokenRegistryContract === undefined) {
 			tokenRegistryContract = await this.getContractByName(
 				tokenRegistryContractName,
@@ -177,24 +165,7 @@ class CICRegistry {
 	}
 
 	public async getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean=false): Promise<FungibleToken> {
-		const contractKey = toContractKey(tokenRegistryContractName);
-		let tokenRegistryContract = this.store.get(contractKey);
-		if (tokenRegistryContract === undefined) {
-			tokenRegistryContract = await this.getContractByName(
-				tokenRegistryContractName,
-				'Registry',
-				[interfaceCodes.Registry],
-			);
-			this.store.put(contractKey, tokenRegistryContract);
-			this.store.put(tokenRegistryContract.options.address, tokenRegistryContract);
-		}
-		const symbolId = await toRegistryKey(symbol);
-		const tokenAddress = await tokenRegistryContract.methods.addressOf(symbolId).call();
-		if (tokenAddress === zeroAddress) {
-			throw 'unknown token "' + symbol + '" using registry "' + tokenRegistryContractName + '"';
-		}
-		const token = this.getFungibleToken(tokenAddress, checkInterface);
-		return token;
+		return await this.tokenHelper.getTokenBySymbol(tokenRegistryContractName, symbol, checkInterface);
 	}
 }
 
@@ -219,5 +190,6 @@ function toTokenKey(s:string): string {
 export {
 	CICRegistry,
 	Registry,
-	toContractKey
+	toContractKey,
+	toRegistryKey
 }
