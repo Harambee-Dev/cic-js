@@ -33,7 +33,6 @@ interface Registry {
 	getTokenBySymbol(tokenRegistryContractName:string, symbol:string, checkInterface:boolean): Promise<FungibleToken>;
 	getAddressDeclaration(tokenRegistryContractName:string, tokenAddress:EVMAddress, checkInterface?:boolean): Promise<FungibleToken>;
 	addToken(address:EVMAddress): Promise<EVMContract>;
-	addTrust(address:EVMAddress);
 }
 
 class CICRegistry {
@@ -54,10 +53,6 @@ class CICRegistry {
 		this.paths = paths;
 		this.fileGetter = fileGetter;
 		this.declaratorHelper = new DeclaratorHelper(w3, this);
-	}
-
-	public addTrust(address:EVMAddress) {
-		this.declaratorHelper.addTrust(address);
 	}
 
 	public async load() {
